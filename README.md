@@ -1,5 +1,7 @@
 # fluent-plugin-mixpanel
 
+[![Build Status](https://travis-ci.org/hakobera/fluent-plugin-mixpanel.png?branch=master)](https://travis-ci.org/hakobera/fluent-plugin-mixpanel)
+
 ## Component
 
 ### MixpanelOutput
