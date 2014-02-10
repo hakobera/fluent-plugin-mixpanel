@@ -63,6 +63,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
         return
       end
 
+      record.merge!(time: time.to_i)
       data['properties'] = record
       
       records << data

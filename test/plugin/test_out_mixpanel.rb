@@ -47,32 +47,39 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write
     stub_mixpanel
     d = create_driver
-    d.emit(sample_record)
+    time = Time.new('2014-01-01T01:23:45+00:00')
+    d.emit(sample_record, time)
     d.run
 
-    assert_equal "123",    @out[0]['properties']['distinct_id']
-    assert_equal "event1", @out[0]['event']
-    assert_equal "value1", @out[0]['properties']['key1']
-    assert_equal "value2", @out[0]['properties']['key2']
+    assert_equal "123",     @out[0]['properties']['distinct_id']
+    assert_equal "event1",  @out[0]['event']
+    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal "value1",  @out[0]['properties']['key1']
+    assert_equal "value2",  @out[0]['properties']['key2']
   end
 
   def test_write_multi_request
     stub_mixpanel
     d = create_driver
-    d.emit(sample_record)
-    d.emit(sample_record.merge(key3: "value3"))
+    time1 = Time.new('2014-01-01T01:23:45+00:00')
+    time2 = Time.new('2014-01-02T01:23:45+00:00')
+
+    d.emit(sample_record, time1)
+    d.emit(sample_record.merge(key3: "value3"), time2)
     d.run
 
-    assert_equal "123",    @out[0]['properties']['distinct_id']
-    assert_equal "event1", @out[0]['event']
-    assert_equal "value1", @out[0]['properties']['key1']
-    assert_equal "value2", @out[0]['properties']['key2']
+    assert_equal "123",      @out[0]['properties']['distinct_id']
+    assert_equal "event1",   @out[0]['event']
+    assert_equal time1.to_i, @out[0]['properties']['time']
+    assert_equal "value1",   @out[0]['properties']['key1']
+    assert_equal "value2",   @out[0]['properties']['key2']
 
-    assert_equal "123",    @out[1]['properties']['distinct_id']
-    assert_equal "event1", @out[1]['event']
-    assert_equal "value1", @out[1]['properties']['key1']
-    assert_equal "value2", @out[1]['properties']['key2']
-    assert_equal "value2", @out[1]['properties']['key2']
+    assert_equal "123",      @out[1]['properties']['distinct_id']
+    assert_equal "event1",   @out[1]['event']
+    assert_equal time2.to_i, @out[1]['properties']['time']
+    assert_equal "value1",   @out[1]['properties']['key1']
+    assert_equal "value2",   @out[1]['properties']['key2']
+    assert_equal "value2",   @out[1]['properties']['key2']
   end
 
   def test_request_error
