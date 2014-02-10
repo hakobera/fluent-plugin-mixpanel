@@ -7,8 +7,8 @@ Gem::Specification.new do |spec|
   spec.version       = "0.0.1"
   spec.authors       = ["Kazuyuki Honda"]
   spec.email         = ["hakobera@gmail.com"]
-  spec.summary       = %q{Output data to mixpanel plugin for fluentd}
-  spec.description   = %q{Output data to mixpanel plugin for fluentd}
+  spec.summary       = %q{Fluentd plugin to send event track data to mixpanel}
+  spec.description   = %q{Fluentd plugin to send event track data to mixpanel}
   spec.homepage      = "https://github.com/hakobera/fluent-plugin-mixpanel"
   spec.license       = "Apache License, Version 2.0"
 
