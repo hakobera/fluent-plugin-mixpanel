@@ -1,66 +1,86 @@
 require 'helper'
-# require 'time'
+require 'uri'
+require 'webmock/test_unit'
+
+WebMock.disable_net_connect!
 
 class MixpanelOutputTest < Test::Unit::TestCase
-  # TMP_DIR = File.dirname(__FILE__) + "/../tmp"
 
   def setup
     Fluent::Test.setup
-    # FileUtils.rm_rf(TMP_DIR)
-    # FileUtils.mkdir_p(TMP_DIR)
+    @out = []
   end
 
   CONFIG = %[
+    project_token test_token
+    distinct_id_key user_id
+    event_key event
   ]
-  # CONFIG = %[
-  #   path #{TMP_DIR}/out_file_test
-  #   compress gz
-  #   utc
-  # ]
 
   def create_driver(conf = CONFIG)
     Fluent::Test::BufferedOutputTestDriver.new(Fluent::MixpanelOutput).configure(conf)
   end
 
-  def test_configure
-    #### set configurations
-    # d = create_driver %[
-    #   path test_path
-    #   compress gz
-    # ]
-    #### check configurations
-    # assert_equal 'test_path', d.instance.path
-    # assert_equal :gz, d.instance.compress
+  def stub_mixpanel(url="https://api.mixpanel.com/track")
+    stub_request(:post, url).with do |req|
+      body = URI.decode_www_form(req.body)
+      @out << JSON.load(Base64.decode64(body.assoc('data').last))
+    end.to_return(status: 200, body: JSON.generate({ status: 1 }))
   end
 
-  def test_format
+  def stub_mixpanel_unavailable(url="https://api.mixpanel.com/track")
+    stub_request(:post, url).to_return(status: 503, body: "Service Unavailable")
+  end
+
+  def sample_record
+    { user_id: "123", event: "event1", key1: "value1", key2: "value2" }
+  end
+
+  def test_configure
     d = create_driver
 
-    # time = Time.parse("2011-01-02 13:14:15 UTC").to_i
-    # d.emit({"a"=>1}, time)
-    # d.emit({"a"=>2}, time)
-
-    # d.expect_format %[2011-01-02T13:14:15Z\ttest\t{"a":1}\n]
-    # d.expect_format %[2011-01-02T13:14:15Z\ttest\t{"a":2}\n]
-
-    # d.run
+    assert_equal 'test_token', d.instance.project_token
+    assert_equal 'user_id', d.instance.distinct_id_key
+    assert_equal 'event', d.instance.event_key
   end
 
   def test_write
+    stub_mixpanel
     d = create_driver
+    d.emit(sample_record)
+    d.run
 
-    # time = Time.parse("2011-01-02 13:14:15 UTC").to_i
-    # d.emit({"a"=>1}, time)
-    # d.emit({"a"=>2}, time)
+    assert_equal "123",    @out[0]['properties']['distinct_id']
+    assert_equal "event1", @out[0]['event']
+    assert_equal "value1", @out[0]['properties']['key1']
+    assert_equal "value2", @out[0]['properties']['key2']
+  end
 
-    # ### FileOutput#write returns path
-    # path = d.run
-    # expect_path = "#{TMP_DIR}/out_file_test._0.log.gz"
-    # assert_equal expect_path, path
+  def test_write_multi_request
+    stub_mixpanel
+    d = create_driver
+    d.emit(sample_record)
+    d.emit(sample_record.merge(key3: "value3"))
+    d.run
 
-    # data = Zlib::GzipReader.open(expect_path) {|f| f.read }
-    # assert_equal %[2011-01-02T13:14:15Z\ttest\t{"a":1}\n] +
-    #                 %[2011-01-02T13:14:15Z\ttest\t{"a":2}\n],
-    #              data
+    assert_equal "123",    @out[0]['properties']['distinct_id']
+    assert_equal "event1", @out[0]['event']
+    assert_equal "value1", @out[0]['properties']['key1']
+    assert_equal "value2", @out[0]['properties']['key2']
+
+    assert_equal "123",    @out[1]['properties']['distinct_id']
+    assert_equal "event1", @out[1]['event']
+    assert_equal "value1", @out[1]['properties']['key1']
+    assert_equal "value2", @out[1]['properties']['key2']
+    assert_equal "value2", @out[1]['properties']['key2']
+  end
+
+  def test_request_error
+    stub_mixpanel_unavailable
+    d = create_driver
+    d.emit(sample_record)
+    assert_raise(Mixpanel::ConnectionError) {
+      d.run
+    }
   end
 end

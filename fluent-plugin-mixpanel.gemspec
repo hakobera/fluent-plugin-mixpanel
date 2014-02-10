@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.summary       = %q{Output data to mixpanel plugin for fluentd}
   spec.description   = %q{Output data to mixpanel plugin for fluentd}
   spec.homepage      = "https://github.com/hakobera/fluent-plugin-mixpanel"
-  spec.license       = "Apache License v2.0"
+  spec.license       = "Apache License, Version 2.0"
 
   spec.files         = `git ls-files -z`.split("\x0")
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
@@ -18,5 +18,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency "fluentd"
+  spec.add_runtime_dependency "mixpanel-ruby"
+
   spec.add_development_dependency "rake"
+  spec.add_development_dependency "webmock"
 end
