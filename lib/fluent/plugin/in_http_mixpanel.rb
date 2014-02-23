@@ -12,7 +12,7 @@ class Fluent::HttpMixpanelInput < Fluent::HttpInput
     json = JSON.parse(data)
     path = "/#{tag_prefix}.#{json['event']}"
     params['json'] = json['properties'].to_json
-    params['time'] = (params['_'].to_i / 1000).to_s if params['_']
+    params['time'] = json['properties']['time'].to_s if json['properties']['time']
 
     ret = super(path, params)
     

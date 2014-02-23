@@ -95,14 +95,13 @@ class HttpMixpanelInputTest < Test::Unit::TestCase
 
   def track(tag, params)
     event = tag.sub(/^mixpanel\.(.+)$/, '\1')
+    params['json']['time'] = params['time'] if params['time']
     data = {
       event: event,
       properties: params['json']
     }
     data = URI.escape(Base64.encode64(data.to_json))
     query = "data=#{data}"
-    query += "&ip=1"
-    query += "&_=#{params['time']}000" if params['time']
     path = "/track/?#{query}"
 
     http = Net::HTTP.new("127.0.0.1", PORT)
