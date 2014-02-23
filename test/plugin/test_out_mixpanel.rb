@@ -11,11 +11,10 @@ class MixpanelOutputTest < Test::Unit::TestCase
   CONFIG = %[
     project_token test_token
     distinct_id_key user_id
-    event_key event
   ]
 
   def create_driver(conf = CONFIG)
-    Fluent::Test::BufferedOutputTestDriver.new(Fluent::MixpanelOutput).configure(conf)
+    Fluent::Test::BufferedOutputTestDriver.new(Fluent::MixpanelOutput, 'mixpanel.test').configure(conf)
   end
 
   def stub_mixpanel(url="https://api.mixpanel.com/track")
@@ -34,7 +33,7 @@ class MixpanelOutputTest < Test::Unit::TestCase
   end
 
   def test_configure
-    d = create_driver
+    d = create_driver(CONFIG + "event_key event")
 
     assert_equal 'test_token', d.instance.project_token
     assert_equal 'user_id', d.instance.distinct_id_key
@@ -42,7 +41,7 @@ class MixpanelOutputTest < Test::Unit::TestCase
   end
 
   def test_configure_with_ip_key
-    d = create_driver(CONFIG + 'ip_key ip')
+    d = create_driver(CONFIG + "event_key event\n ip_key ip")
 
     assert_equal 'test_token', d.instance.project_token
     assert_equal 'user_id', d.instance.distinct_id_key
@@ -50,9 +49,19 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_equal 'ip', d.instance.ip_key
   end
 
+  def test_configure_with_event_map_tag
+    d = create_driver(CONFIG + "remove_tag_prefix mixpanel\n event_map_tag true")
+
+    assert_equal 'test_token', d.instance.project_token
+    assert_equal 'user_id', d.instance.distinct_id_key
+    assert_equal nil, d.instance.event_key
+    assert_equal 'mixpanel', d.instance.remove_tag_prefix
+    assert_equal true.to_s, d.instance.event_map_tag
+  end
+
   def test_write
     stub_mixpanel
-    d = create_driver
+    d = create_driver(CONFIG + "event_key event")
     time = Time.new('2014-01-01T01:23:45+00:00')
     d.emit(sample_record, time)
     d.run
@@ -66,7 +75,7 @@ class MixpanelOutputTest < Test::Unit::TestCase
 
   def test_write_multi_request
     stub_mixpanel
-    d = create_driver
+    d = create_driver(CONFIG + "event_key event")
     time1 = Time.new('2014-01-01T01:23:45+00:00')
     time2 = Time.new('2014-01-02T01:23:45+00:00')
 
@@ -90,7 +99,7 @@ class MixpanelOutputTest < Test::Unit::TestCase
 
   def test_write_with_ip_key
     stub_mixpanel
-    d = create_driver(CONFIG + 'ip_key ip_address')
+    d = create_driver(CONFIG + "event_key event\n ip_key ip_address")
     time = Time.new('2014-01-01T01:23:45+00:00')
     d.emit(sample_record.merge('ip_address' => '192.168.0.2'), time)
     d.run
@@ -103,9 +112,37 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_equal "value2",      @out[0]['properties']['key2']
   end
 
+  def test_write_with_event_map_tag
+    stub_mixpanel
+    d = create_driver(CONFIG + "remove_tag_prefix mixpanel\n event_map_tag true")
+    time = Time.new('2014-01-01T01:23:45+00:00')
+    d.emit(sample_record, time)
+    d.run
+
+    assert_equal "123",     @out[0]['properties']['distinct_id']
+    assert_equal "test",    @out[0]['event']
+    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal "value1",  @out[0]['properties']['key1']
+    assert_equal "value2",  @out[0]['properties']['key2']
+  end
+
+  def test_write_with_no_remove_tag_prefix
+    stub_mixpanel
+    d = create_driver(CONFIG + "event_map_tag true")
+    time = Time.new('2014-01-01T01:23:45+00:00')
+    d.emit(sample_record, time)
+    d.run
+
+    assert_equal "123",           @out[0]['properties']['distinct_id']
+    assert_equal "mixpanel.test", @out[0]['event']
+    assert_equal time.to_i,       @out[0]['properties']['time']
+    assert_equal "value1",        @out[0]['properties']['key1']
+    assert_equal "value2",        @out[0]['properties']['key2']
+  end
+
   def test_request_error
     stub_mixpanel_unavailable
-    d = create_driver
+    d = create_driver(CONFIG + "event_key event")
     d.emit(sample_record)
     assert_raise(Mixpanel::ConnectionError) {
       d.run
