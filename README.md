@@ -8,6 +8,10 @@
 
 [Fluentd](http://fluentd.org) plugin to send event track data to [mixpanel](https://mixpanel.com).
 
+### HttpMixpanelInput
+
+[Fluentd](http://fluentd.org) plugin to integrate [mixpanel javascript libraries](https://mixpanel.com/docs/integration-libraries/javascript).
+
 ## Installation
 
 Install with gem or fluent-gem command as:
@@ -27,7 +31,7 @@ $ sudo /usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-mixpanel
 MixpanelOutput needs mixpanel's `project_token`, that can get from your mixpanel project settings.
 You should also specify property key name by `distinct_id_key` and `event_key`.
 
-```xml
+```
 <match output.mixpanel.*>
   type mixpanel
   project_token YOUR_PROJECT_TOKEN
@@ -48,6 +52,24 @@ above settings send to the following data to mixpanel, using [mixpanel-ruby](htt
 tracker = Mixpanel::Tracker.new(YOUR_PROJECT_TOKEN)
 tracker.track("123", "event1", { key1: "value1", key2: "value2" })
 ```
+
+### HttpMixpanelInput
+
+HttpMixpanelInput is very similar to [http Input Plugin](http://docs.fluentd.org/en/articles/in_http). Only difference is that it needs `access_control_allow_origin`, to accept [Cross-site HTTP requests](https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS).
+
+```
+<source>
+  type http_mixpanel
+  bind 127.0.0.1
+  port 8888
+  body_size_limit 10m
+  keepalive_timeout 5
+  add_http_headers true
+  access_control_allow_origin http://0.0.0.0:8000
+</source>
+```
+
+In example folder, you can see example configuration and HTML.
 
 ## Contributing
 

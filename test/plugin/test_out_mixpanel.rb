@@ -1,8 +1,5 @@
 require 'helper'
 require 'uri'
-require 'webmock/test_unit'
-
-WebMock.disable_net_connect!
 
 class MixpanelOutputTest < Test::Unit::TestCase
 
