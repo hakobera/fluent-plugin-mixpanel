@@ -26,6 +26,6 @@ class Fluent::HttpMixpanelInput < Fluent::HttpInput
       'Content-type' => 'text/plain'
     }
 
-    [ret[0], headers, (ret[0] == 200 ? 1 : 0)]
+    [ret[0], headers, (ret[0] == '200 OK' ? '0' : '1')]
   end
 end
