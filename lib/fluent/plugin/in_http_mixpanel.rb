@@ -4,15 +4,15 @@ require 'base64'
 class Fluent::HttpMixpanelInput < Fluent::HttpInput
   Fluent::Plugin.register_input('http_mixpanel', self)
 
-  config_param :access_control_allow_origin
   config_param :tag_prefix, :default => 'mixpanel'
 
   def on_request(path_info, params)
     data = Base64.decode64(params['data']).force_encoding('utf-8')
     json = JSON.parse(data)
+    props = json['properties']
     path = "/#{tag_prefix}.#{json['event']}"
-    params['json'] = json['properties'].to_json
-    params['time'] = json['properties']['time'].to_s if json['properties']['time']
+    params['json'] = props.to_json
+    params['time'] = props['time'].to_s if props['time']
 
     ret = super(path, params)
     
@@ -20,7 +20,7 @@ class Fluent::HttpMixpanelInput < Fluent::HttpInput
       'Access-Control-Allow-Credentials' => true,
       'Access-Control-Allow-Headers' => 'X-Requested-With',
       'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Origin' => access_control_allow_origin,
+      'Access-Control-Allow-Origin' => params['HTTP_ORIGIN'],
       'Access-Control-Max-Age' => 1728000,
       'Cache-Control' => 'no-cache, no-store',
       'Content-type' => 'text/plain'

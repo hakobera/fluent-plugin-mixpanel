@@ -14,7 +14,6 @@ class HttpMixpanelInputTest < Test::Unit::TestCase
     bind 127.0.0.1
     body_size_limit 10m
     keepalive_timeout 5
-    access_control_allow_origin http://foo.example
   ]
 
   def create_driver(conf=CONFIG)
@@ -28,7 +27,6 @@ class HttpMixpanelInputTest < Test::Unit::TestCase
     assert_equal 10*1024*1024, d.instance.body_size_limit
     assert_equal 5, d.instance.keepalive_timeout
     assert_equal false, d.instance.add_http_headers    
-    assert_equal 'http://foo.example', d.instance.access_control_allow_origin
   end
 
   def test_time
@@ -47,7 +45,7 @@ class HttpMixpanelInputTest < Test::Unit::TestCase
         assert_equal 'true', res.header['access-control-allow-credentials']
         assert_equal 'X-Requested-With', res.header['access-control-allow-headers']
         assert_equal 'GET, POST, OPTIONS', res.header['access-control-allow-methods']
-        assert_equal d.instance.access_control_allow_origin, res.header['access-control-allow-origin']
+        assert_equal 'http://foo.example', res.header['access-control-allow-origin']
         assert_equal '1728000', res.header['access-control-max-age']
         assert_equal 'no-cache, no-store', res.header['cache-control']
       }
@@ -105,7 +103,7 @@ class HttpMixpanelInputTest < Test::Unit::TestCase
     path = "/track/?#{query}"
 
     http = Net::HTTP.new("127.0.0.1", PORT)
-    req = Net::HTTP::Get.new(path)
+    req = Net::HTTP::Get.new(path, { 'origin' => 'http://foo.example' })
     http.request(req)
   end
 

@@ -55,7 +55,7 @@ tracker.track("123", "event1", { key1: "value1", key2: "value2" })
 
 ### HttpMixpanelInput
 
-HttpMixpanelInput is very similar to [http Input Plugin](http://docs.fluentd.org/en/articles/in_http). Only difference is that it needs `access_control_allow_origin`, to accept [Cross-site HTTP requests](https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS).
+HttpMixpanelInput has same configuration as [http Input Plugin](http://docs.fluentd.org/en/articles/in_http).
 
 ```
 <source>
@@ -65,7 +65,6 @@ HttpMixpanelInput is very similar to [http Input Plugin](http://docs.fluentd.org
   body_size_limit 10m
   keepalive_timeout 5
   add_http_headers true
-  access_control_allow_origin http://0.0.0.0:8000
 </source>
 ```
 
