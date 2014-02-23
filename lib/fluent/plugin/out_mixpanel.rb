@@ -4,6 +4,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   config_param :project_token, :string
   config_param :distinct_id_key, :string
   config_param :event_key, :string
+  config_param :ip_key, :string, :default => nil
 
   def initialize
     super
@@ -15,6 +16,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
     @project_tokey = conf['project_token']
     @distinct_id_key = conf['distinct_id_key']
     @event_key = conf['event_key']
+    @ip_key = conf['ip_key']
 
     if @project_token.empty?
       raise Fluent::ConfigError, "'project_token' must be specifed."
@@ -61,6 +63,11 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
       else 
         log.warn('no event')
         return
+      end
+
+      if !@ip_key.nil? and record[@ip_key]
+        record['ip'] = record[@ip_key]
+        record.delete(@ip_key)
       end
 
       record.merge!(time: time.to_i)

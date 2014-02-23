@@ -41,6 +41,15 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_equal 'event', d.instance.event_key
   end
 
+  def test_configure_with_ip_key
+    d = create_driver(CONFIG + 'ip_key ip')
+
+    assert_equal 'test_token', d.instance.project_token
+    assert_equal 'user_id', d.instance.distinct_id_key
+    assert_equal 'event', d.instance.event_key
+    assert_equal 'ip', d.instance.ip_key
+  end
+
   def test_write
     stub_mixpanel
     d = create_driver
@@ -77,6 +86,21 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_equal "value1",   @out[1]['properties']['key1']
     assert_equal "value2",   @out[1]['properties']['key2']
     assert_equal "value2",   @out[1]['properties']['key2']
+  end
+
+  def test_write_with_ip_key
+    stub_mixpanel
+    d = create_driver(CONFIG + 'ip_key ip_address')
+    time = Time.new('2014-01-01T01:23:45+00:00')
+    d.emit(sample_record.merge('ip_address' => '192.168.0.2'), time)
+    d.run
+
+    assert_equal "123",         @out[0]['properties']['distinct_id']
+    assert_equal "event1",      @out[0]['event']    
+    assert_equal time.to_i,     @out[0]['properties']['time']
+    assert_equal "192.168.0.2", @out[0]['properties']['ip']
+    assert_equal "value1",      @out[0]['properties']['key1']
+    assert_equal "value2",      @out[0]['properties']['key2']
   end
 
   def test_request_error
