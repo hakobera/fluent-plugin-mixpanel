@@ -45,32 +45,39 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
     records = []
     chunk.msgpack_each do |tag, time, record|
       data = {}
+      prop = data['properties'] = record.dup
 
-      if record[@distinct_id_key]
-        data['distinct_id'] = record[@distinct_id_key]
-        record.delete(@distinct_id_key)
-      else
-        log.warn('no distinct_id')
-        return
-      end
+      # Ignore token in record
+      prop.delete('token')
 
       if @event_map_tag
         data['event'] = tag.gsub(/^#{@remove_tag_prefix}(\.)?/, '')
       elsif record[@event_key]
         data['event'] = record[@event_key]
-        record.delete(@event_key)
+        prop.delete(@event_key)
       else 
         log.warn('no event')
         return
       end
 
-      if !@ip_key.nil? and record[@ip_key]
-        record['ip'] = record[@ip_key]
-        record.delete(@ip_key)
+      # Ignore browswer only special event
+      return if data['event'].start_with?('mp_')
+
+      if record[@distinct_id_key]
+        data['distinct_id'] = record[@distinct_id_key]
+        prop.delete(@distinct_id_key)
+      else
+        log.warn('no distinct_id')
+        return
       end
 
-      record.merge!(time: time.to_i)
-      data['properties'] = record
+      if !@ip_key.nil? and record[@ip_key]
+        prop['ip'] = record[@ip_key]
+        prop.delete(@ip_key)
+      end
+
+      prop.select! {|key, _| !key.start_with?('mp_') }
+      prop.merge!('time' => time.to_i)
       
       records << data
     end

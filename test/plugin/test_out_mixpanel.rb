@@ -66,6 +66,7 @@ class MixpanelOutputTest < Test::Unit::TestCase
     d.emit(sample_record, time)
     d.run
 
+    assert_equal "test_token", @out[0]['properties']['token']
     assert_equal "123",     @out[0]['properties']['distinct_id']
     assert_equal "event1",  @out[0]['event']
     assert_equal time.to_i, @out[0]['properties']['time']
@@ -138,6 +139,48 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_equal time.to_i,       @out[0]['properties']['time']
     assert_equal "value1",        @out[0]['properties']['key1']
     assert_equal "value2",        @out[0]['properties']['key2']
+  end
+
+  def test_write_ignore_special_event
+    stub_mixpanel
+    d = create_driver(CONFIG + "event_key event")
+    time = Time.new('2014-01-01T01:23:45+00:00')
+    d.emit({ user_id: '123', event: 'mp_page_view' }, time)
+    d.run
+
+    assert_equal 0, @out.length
+  end
+
+  def test_write_ignore_special_property
+    stub_mixpanel
+    d = create_driver(CONFIG + "event_key event")
+    time = Time.new('2014-01-01T01:23:45+00:00')
+    d.emit(sample_record.merge('mp_event' => '3'), time)
+    d.run
+
+    assert_equal "test_token", @out[0]['properties']['token']
+    assert_equal "123",     @out[0]['properties']['distinct_id']
+    assert_equal "event1",  @out[0]['event']
+    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal "value1",  @out[0]['properties']['key1']
+    assert_equal "value2",  @out[0]['properties']['key2']
+    assert_equal false, @out[0]['properties'].key?('mp_event')
+  end
+
+  def test_write_delete_supried_token
+    stub_mixpanel
+    d = create_driver(CONFIG + "event_key event")
+    time = Time.new('2014-01-01T01:23:45+00:00')
+    d.emit(sample_record.merge('token' => '123'), time)
+    d.run
+
+    assert_equal "test_token", @out[0]['properties']['token']
+    assert_equal "123",     @out[0]['properties']['distinct_id']
+    assert_equal "event1",  @out[0]['event']
+    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal "value1",  @out[0]['properties']['key1']
+    assert_equal "value2",  @out[0]['properties']['key2']
+    assert_equal false, @out[0]['properties'].key?('mp_event')
   end
 
   def test_request_error
