@@ -42,7 +42,7 @@ class HttpMixpanelInputTest < Test::Unit::TestCase
       d.expected_emits.each {|tag,time,record|
         res = track("#{tag}", {"json"=>record})
         assert_equal "200", res.code
-        assert_equal '0', res.body
+        assert_equal '1', res.body
         assert_equal 'true', res.header['access-control-allow-credentials']
         assert_equal 'X-Requested-With', res.header['access-control-allow-headers']
         assert_equal 'GET, POST, OPTIONS', res.header['access-control-allow-methods']
