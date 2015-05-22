@@ -21,5 +21,6 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "mixpanel-ruby"
 
   spec.add_development_dependency "rake"
+  spec.add_development_dependency "test-unit"
   spec.add_development_dependency "webmock"
 end

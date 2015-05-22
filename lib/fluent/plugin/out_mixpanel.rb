@@ -2,8 +2,8 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   Fluent::Plugin.register_output('mixpanel', self)
 
   config_param :project_token, :string
-  config_param :api_key, :string
-  config_param :use_import, :bool, :defalut => false
+  config_param :api_key, :string, :default => ''
+  config_param :use_import, :bool, :default => nil
   config_param :distinct_id_key, :string
   config_param :event_key, :string, :default => nil
   config_param :ip_key, :string, :default => nil
@@ -92,9 +92,10 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   def send_to_mixpanel(records)
     records.each do |record|
       if @use_import
-        @tracker.import(@api_key, record['distinct_id'], record['event'], record['properties')
+        @tracker.import(@api_key, record['distinct_id'], record['event'], record['properties'])
       else
         @tracker.track(record['distinct_id'], record['event'], record['properties'])
       end
+    end
   end
 end
