@@ -83,6 +83,35 @@ tracker = Mixpanel::Tracker.new(YOUR_PROJECT_TOKEN)
 tracker.track("123", "event1", { key1: "value1", key2: "value2" })
 ```
 
+#### Use the import method to post instead of track
+
+You can use tag name as event name like this.
+
+```
+<match output.mixpanel.*>
+  type mixpanel
+  project_token YOUR_PROJECT_TOKEN
+  distinct_id_key user_id
+  remove_tag_prefix output.mixpanel
+  event_map_tag true
+  use_import true
+  api_key YOUR_API_KEY
+</match>
+```
+
+If tag name is `output.mixpanel.event1` and record like this:
+
+```rb
+{ user_id: "123", key1: "value1", key2: "value2" }
+```
+
+above settings send to the following data to mixpanel, using [mixpanel-ruby](https://github.com/mixpanel/mixpanel-ruby) gem.
+
+```rb
+tracker = Mixpanel::Tracker.new(YOUR_PROJECT_TOKEN)
+tracker.import(api_key, "123", "event1", { key1: "value1", key2: "value2" })
+```
+
 ### HttpMixpanelInput
 
 HttpMixpanelInput has same configuration as [http Input Plugin](http://docs.fluentd.org/en/articles/in_http).
