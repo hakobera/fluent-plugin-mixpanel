@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/hakobera/fluent-plugin-mixpanel.png?branch=master)](https://travis-ci.org/hakobera/fluent-plugin-mixpanel)
 
+**CAUTION** This plugin does not support Ruby < 2.0.
+
 ## Component
 
 ### MixpanelOutput

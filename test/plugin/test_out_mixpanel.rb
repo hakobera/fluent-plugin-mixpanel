@@ -106,7 +106,7 @@ class MixpanelOutputTest < Test::Unit::TestCase
     d.run
 
     assert_equal "123",         @out[0]['properties']['distinct_id']
-    assert_equal "event1",      @out[0]['event']    
+    assert_equal "event1",      @out[0]['event']
     assert_equal time.to_i,     @out[0]['properties']['time']
     assert_equal "192.168.0.2", @out[0]['properties']['ip']
     assert_equal "value1",      @out[0]['properties']['key1']
@@ -187,7 +187,7 @@ class MixpanelOutputTest < Test::Unit::TestCase
     stub_mixpanel_unavailable
     d = create_driver(CONFIG + "event_key event")
     d.emit(sample_record)
-    assert_raise(Mixpanel::ConnectionError) {
+    assert_raise(Fluent::MixpanelOutput::MixpanelError) {
       d.run
     }
   end

@@ -9,6 +9,9 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   config_param :remove_tag_prefix, :string, :default => nil
   config_param :event_map_tag, :bool, :default => false
 
+  class MixpanelError < StandardError
+  end
+
   def initialize
     super
     require 'mixpanel-ruby'
@@ -55,7 +58,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
       elsif record[@event_key]
         data['event'] = record[@event_key]
         prop.delete(@event_key)
-      else 
+      else
         log.warn('no event')
         return
       end
@@ -78,12 +81,13 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
 
       prop.select! {|key, _| !key.start_with?('mp_') }
       prop.merge!('time' => time.to_i)
-      
+
       records << data
     end
 
     records.each do |record|
-      @tracker.track(record['distinct_id'], record['event'], record['properties'])
+      success = @tracker.track(record['distinct_id'], record['event'], record['properties'])
+      raise MixpanelError.new("Failed to track event to mixpanel") unless success
     end
   end
 end

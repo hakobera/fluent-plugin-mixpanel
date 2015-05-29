@@ -17,9 +17,10 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_runtime_dependency "fluentd"
-  spec.add_runtime_dependency "mixpanel-ruby"
+  spec.add_runtime_dependency "fluentd", ">= 0.10.55"
+  spec.add_runtime_dependency "mixpanel-ruby", "~> 2.1.0"
 
   spec.add_development_dependency "rake"
   spec.add_development_dependency "webmock"
+  spec.add_development_dependency "test-unit", "~> 3.0.2"
 end
