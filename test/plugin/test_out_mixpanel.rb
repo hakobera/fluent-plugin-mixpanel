@@ -195,7 +195,7 @@ class MixpanelOutputTest < Test::Unit::TestCase
     stub_mixpanel_unavailable
     d = create_driver(CONFIG + "event_key event")
     d.emit(sample_record)
-    assert_raise(Mixpanel::ConnectionError) {
+    assert_raise(Fluent::MixpanelOutput::MixpanelError) {
       d.run
     }
   end

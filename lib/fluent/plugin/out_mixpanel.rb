@@ -11,6 +11,9 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   config_param :remove_tag_prefix, :string, :default => nil
   config_param :event_map_tag, :bool, :default => false
 
+  class MixpanelError < StandardError
+  end
+
   def initialize
     super
     require 'mixpanel-ruby'
@@ -91,11 +94,12 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
 
   def send_to_mixpanel(records)
     records.each do |record|
-      if @use_import
-        @tracker.import(@api_key, record['distinct_id'], record['event'], record['properties'])
-      else
-        @tracker.track(record['distinct_id'], record['event'], record['properties'])
-      end
+     success = 	if @use_import
+        					@tracker.import(@api_key, record['distinct_id'], record['event'], record['properties'])
+      					else
+        					@tracker.track(record['distinct_id'], record['event'], record['properties'])
+      					end
+      raise MixpanelError.new("Failed to track event to mixpanel") unless success
     end
   end
 end
