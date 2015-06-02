@@ -2,6 +2,8 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   Fluent::Plugin.register_output('mixpanel', self)
 
   config_param :project_token, :string
+  config_param :api_key, :string, :default => ''
+  config_param :use_import, :bool, :default => nil
   config_param :distinct_id_key, :string
   config_param :event_key, :string, :default => nil
   config_param :ip_key, :string, :default => nil
@@ -25,6 +27,8 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
     @ip_key = conf['ip_key']
     @remove_tag_prefix = conf['remove_tag_prefix']
     @event_map_tag = conf['event_map_tag']
+    @api_key = conf['api_key']
+    @use_import = conf['use_import']
 
     if @event_key.nil? and !@event_map_tag
       raise Fluent::ConfigError, "'event_key' must be specifed when event_map_tag == false."
@@ -85,8 +89,16 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
       records << data
     end
 
+    send_to_mixpanel(records)
+  end
+
+  def send_to_mixpanel(records)
     records.each do |record|
-      success = @tracker.track(record['distinct_id'], record['event'], record['properties'])
+     success = 	if @use_import
+        					@tracker.import(@api_key, record['distinct_id'], record['event'], record['properties'])
+      					else
+        					@tracker.track(record['distinct_id'], record['event'], record['properties'])
+      					end
       raise MixpanelError.new("Failed to track event to mixpanel") unless success
     end
   end

@@ -13,6 +13,10 @@ class MixpanelOutputTest < Test::Unit::TestCase
     distinct_id_key user_id
   ]
 
+  IMPORT_CONFIG = CONFIG + %[ api_key test_api_key
+                              use_import true
+                            ]
+
   def create_driver(conf = CONFIG)
     Fluent::Test::BufferedOutputTestDriver.new(Fluent::MixpanelOutput, 'mixpanel.test').configure(conf)
   end
@@ -22,6 +26,10 @@ class MixpanelOutputTest < Test::Unit::TestCase
       body = URI.decode_www_form(req.body)
       @out << JSON.load(Base64.decode64(body.assoc('data').last))
     end.to_return(status: 200, body: JSON.generate({ status: 1 }))
+  end
+
+  def stub_mixpanel_import
+    stub_mixpanel("https://api.mixpanel.com/import")
   end
 
   def stub_mixpanel_unavailable(url="https://api.mixpanel.com/track")
@@ -75,8 +83,8 @@ class MixpanelOutputTest < Test::Unit::TestCase
   end
 
   def test_write_multi_request
-    stub_mixpanel
-    d = create_driver(CONFIG + "event_key event")
+    stub_mixpanel_import
+    d = create_driver(IMPORT_CONFIG + "event_key event")
     time1 = Time.new('2014-01-01T01:23:45+00:00')
     time2 = Time.new('2014-01-02T01:23:45+00:00')
 
