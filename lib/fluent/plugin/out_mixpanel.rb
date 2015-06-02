@@ -1,4 +1,3 @@
-
 class Fluent::MixpanelOutput < Fluent::BufferedOutput
   Fluent::Plugin.register_output('mixpanel', self)
 
