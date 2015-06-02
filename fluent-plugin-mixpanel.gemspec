@@ -19,9 +19,8 @@ Gem::Specification.new do |spec|
 
   spec.add_runtime_dependency "fluentd", ">= 0.10.55"
   spec.add_runtime_dependency "mixpanel-ruby", "~> 2.1.0"
-  spec.add_runtime_dependency "test-unit", "~> 3.0.2"
 
   spec.add_development_dependency "rake"
   spec.add_development_dependency "webmock"
-  spec.add_development_dependency "test-unit", "~> 3.0.2"
+  #spec.add_development_dependency "test-unit", "~> 3.0.2"
 end
