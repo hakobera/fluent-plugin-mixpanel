@@ -1,14 +1,14 @@
 class Fluent::MixpanelOutput < Fluent::BufferedOutput
   Fluent::Plugin.register_output('mixpanel', self)
 
+  include Fluent::HandleTagNameMixin
+
   config_param :project_token, :string
   config_param :api_key, :string, :default => ''
   config_param :use_import, :bool, :default => nil
   config_param :distinct_id_key, :string
   config_param :event_key, :string, :default => nil
   config_param :ip_key, :string, :default => nil
-
-  config_param :remove_tag_prefix, :string, :default => nil
   config_param :event_map_tag, :bool, :default => false
 
   class MixpanelError < StandardError
@@ -25,7 +25,6 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
     @distinct_id_key = conf['distinct_id_key']
     @event_key = conf['event_key']
     @ip_key = conf['ip_key']
-    @remove_tag_prefix = conf['remove_tag_prefix']
     @event_map_tag = conf['event_map_tag']
     @api_key = conf['api_key']
     @use_import = conf['use_import']
@@ -58,7 +57,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
       prop.delete('token')
 
       if @event_map_tag
-        data['event'] = tag.gsub(/^#{@remove_tag_prefix}(\.)?/, '')
+        data['event'] = tag
       elsif record[@event_key]
         data['event'] = record[@event_key]
         prop.delete(@event_key)
