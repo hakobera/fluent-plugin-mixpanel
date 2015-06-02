@@ -57,16 +57,6 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_equal 'ip', d.instance.ip_key
   end
 
-  def test_configure_with_event_map_tag
-    d = create_driver(CONFIG + "remove_tag_prefix mixpanel\n event_map_tag true")
-
-    assert_equal 'test_token', d.instance.project_token
-    assert_equal 'user_id', d.instance.distinct_id_key
-    assert_equal nil, d.instance.event_key
-    assert_equal 'mixpanel', d.instance.remove_tag_prefix
-    assert_equal true.to_s, d.instance.event_map_tag
-  end
-
   def test_write
     stub_mixpanel
     d = create_driver(CONFIG + "event_key event")
@@ -121,21 +111,7 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_equal "value2",      @out[0]['properties']['key2']
   end
 
-  def test_write_with_event_map_tag
-    stub_mixpanel
-    d = create_driver(CONFIG + "remove_tag_prefix mixpanel\n event_map_tag true")
-    time = Time.new('2014-01-01T01:23:45+00:00')
-    d.emit(sample_record, time)
-    d.run
-
-    assert_equal "123",     @out[0]['properties']['distinct_id']
-    assert_equal "test",    @out[0]['event']
-    assert_equal time.to_i, @out[0]['properties']['time']
-    assert_equal "value1",  @out[0]['properties']['key1']
-    assert_equal "value2",  @out[0]['properties']['key2']
-  end
-
-  def test_write_with_no_remove_tag_prefix
+  def test_write_with_no_tag_manipulation
     stub_mixpanel
     d = create_driver(CONFIG + "event_map_tag true")
     time = Time.new('2014-01-01T01:23:45+00:00')
@@ -148,6 +124,64 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_equal "value1",        @out[0]['properties']['key1']
     assert_equal "value2",        @out[0]['properties']['key2']
   end
+
+  def test_write_with_event_map_tag_removing_prefix
+    stub_mixpanel
+    d = create_driver(CONFIG + "remove_tag_prefix mixpanel.\n event_map_tag true")
+    time = Time.new('2014-01-01T01:23:45+00:00')
+    d.emit(sample_record, time)
+    d.run
+
+    assert_equal "123",     @out[0]['properties']['distinct_id']
+    assert_equal "test",    @out[0]['event']
+    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal "value1",  @out[0]['properties']['key1']
+    assert_equal "value2",  @out[0]['properties']['key2']
+  end
+
+  def test_write_with_event_map_tag_removing_suffix
+    stub_mixpanel
+    d = create_driver(CONFIG + "remove_tag_suffix .test\n event_map_tag true")
+    time = Time.new('2014-01-01T01:23:45+00:00')
+    d.emit(sample_record, time)
+    d.run
+
+    assert_equal "123",     @out[0]['properties']['distinct_id']
+    assert_equal "mixpanel",    @out[0]['event']
+    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal "value1",  @out[0]['properties']['key1']
+    assert_equal "value2",  @out[0]['properties']['key2']
+  end
+
+    def test_write_with_event_map_tag_adding_prefix
+    stub_mixpanel
+    d = create_driver(CONFIG + "add_tag_prefix foo.\n event_map_tag true")
+    time = Time.new('2014-01-01T01:23:45+00:00')
+    d.emit(sample_record, time)
+    d.run
+
+    assert_equal "123",     @out[0]['properties']['distinct_id']
+    assert_equal "foo.mixpanel.test",    @out[0]['event']
+    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal "value1",  @out[0]['properties']['key1']
+    assert_equal "value2",  @out[0]['properties']['key2']
+  end
+
+  def test_write_with_event_map_tag_adding_suffix
+    stub_mixpanel
+    d = create_driver(CONFIG + "add_tag_suffix .foo\n event_map_tag true")
+    time = Time.new('2014-01-01T01:23:45+00:00')
+    d.emit(sample_record, time)
+    d.run
+
+    assert_equal "123",     @out[0]['properties']['distinct_id']
+    assert_equal "mixpanel.test.foo",    @out[0]['event']
+    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal "value1",  @out[0]['properties']['key1']
+    assert_equal "value2",  @out[0]['properties']['key2']
+  end
+
+
 
   def test_write_ignore_special_event
     stub_mixpanel

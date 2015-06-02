@@ -60,7 +60,7 @@ tracker.track("123", "event1", { key1: "value1", key2: "value2" })
 
 #### Use distinct_id_key and event_map_tag
 
-You can use tag name as event name like this.
+You can use tag name as event name like this. (see additional tag manipulations options below)
 
 ```
 <match output.mixpanel.*>
@@ -112,6 +112,17 @@ above settings send to the following data to mixpanel, using [mixpanel-ruby](htt
 ```rb
 tracker = Mixpanel::Tracker.new(YOUR_PROJECT_TOKEN)
 tracker.import(api_key, "123", "event1", { key1: "value1", key2: "value2" })
+```
+
+---
+
+fluentd-plugin-mixpanel also includes the HandleTagNameMixin mixin which allows the following additional options:
+
+```
+remove_tag_prefix <tag_prefix_to_remove_including_the_dot>
+remove_tag_suffix <tag_suffix_to_remove_including_the_dot>
+add_tag_prefix <tag_prefix_to_add_including_the_dot>
+add_tag_suffix <tag_suffix_to_add_including_the_dot>
 ```
 
 ### HttpMixpanelInput
