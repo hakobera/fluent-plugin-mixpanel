@@ -57,6 +57,15 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_equal 'ip', d.instance.ip_key
   end
 
+  def test_configure_with_event_map_tag
+    d = create_driver(CONFIG + "event_map_tag true")
+
+    assert_equal 'test_token', d.instance.project_token
+    assert_equal 'user_id', d.instance.distinct_id_key
+    assert_equal nil, d.instance.event_key
+    assert_equal true.to_s, d.instance.event_map_tag
+  end
+
   def test_write
     stub_mixpanel
     d = create_driver(CONFIG + "event_key event")
