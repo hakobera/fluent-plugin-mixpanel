@@ -11,6 +11,8 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   config_param :event_key, :string, :default => nil
   config_param :ip_key, :string, :default => nil
   config_param :event_map_tag, :bool, :default => false
+  #NOTE: This will be removed in a future release. Please specify the '.' on any prefix
+  config_param :use_legacy_prefix_behavior, :default => true
 
   class MixpanelError < StandardError
   end
@@ -29,6 +31,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
     @event_map_tag = conf['event_map_tag']
     @api_key = conf['api_key']
     @use_import = conf['use_import']
+    @use_legacy_prefix_behavior = conf['use_legacy_prefix_behavior']
 
     if @event_key.nil? and !@event_map_tag
       raise Fluent::ConfigError, "'event_key' must be specifed when event_map_tag == false."
@@ -58,6 +61,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
       prop.delete('token')
 
       if @event_map_tag
+        tag.gsub!(/^\./, '') if @use_legacy_prefix_behavior
         data['event'] = tag
       elsif record[@event_key]
         data['event'] = record[@event_key]

@@ -15,6 +15,7 @@ class MixpanelOutputTest < Test::Unit::TestCase
 
   IMPORT_CONFIG = CONFIG + %[ api_key test_api_key
                               use_import true
+                              use_legacy_prefix_behavior false
                             ]
 
   def create_driver(conf = CONFIG)
@@ -148,6 +149,20 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_equal "value2",  @out[0]['properties']['key2']
   end
 
+  def test_write_with_event_map_tag_removing_prefix_LEGACY
+    stub_mixpanel
+    d = create_driver(CONFIG + "remove_tag_prefix mixpanel\n event_map_tag true\n use_legacy_prefix_behavior true")
+    time = Time.new('2014-01-01T01:23:45+00:00')
+    d.emit(sample_record, time)
+    d.run
+
+    assert_equal "123",     @out[0]['properties']['distinct_id']
+    assert_equal "test",    @out[0]['event']
+    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal "value1",  @out[0]['properties']['key1']
+    assert_equal "value2",  @out[0]['properties']['key2']
+  end
+
   def test_write_with_event_map_tag_removing_suffix
     stub_mixpanel
     d = create_driver(CONFIG + "remove_tag_suffix .test\n event_map_tag true")
@@ -162,7 +177,7 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_equal "value2",  @out[0]['properties']['key2']
   end
 
-    def test_write_with_event_map_tag_adding_prefix
+  def test_write_with_event_map_tag_adding_prefix
     stub_mixpanel
     d = create_driver(CONFIG + "add_tag_prefix foo.\n event_map_tag true")
     time = Time.new('2014-01-01T01:23:45+00:00')
