@@ -62,12 +62,21 @@ tracker.track("123", "event1", { key1: "value1", key2: "value2" })
 
 You can use tag name as event name like this. (see additional tag manipulations options below)
 
+##PLEASE NOTE (breaking api change in a future release)
+
+The api for remove_tag_prefix will be changing in a future release. There is currently a boolean option,
+use_legacy_prefix_behavior, which will ensure legacy behavior is maintained until that time. Eventually this option will go away
+as well and the new behavior will be the only way. The difference is pretty simple, the '.' in the prefix needs to be specified.
+This change allows this plugin to use Fluet's mixin and unifies syntax across plugins. Currently, use_legacy_prefix_behavior
+defaults to true, which will work either way, but eventually you will need to specify the '.' in your prefix. Again, use_legacy_prefix_behavior simply removes any '.' along with the specified prefix and will behave properly even after you change your configs
+to be current as seen below. You do not need to set this option.
+
 ```
 <match output.mixpanel.*>
   type mixpanel
   project_token YOUR_PROJECT_TOKEN
   distinct_id_key user_id
-  remove_tag_prefix output.mixpanel
+  remove_tag_prefix output.mixpanel.
   event_map_tag true
 </match>
 ```
@@ -94,7 +103,7 @@ You can use tag name as event name like this.
   type mixpanel
   project_token YOUR_PROJECT_TOKEN
   distinct_id_key user_id
-  remove_tag_prefix output.mixpanel
+  remove_tag_prefix output.mixpanel.
   event_map_tag true
   use_import true
   api_key YOUR_API_KEY
