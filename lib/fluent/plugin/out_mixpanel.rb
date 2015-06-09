@@ -1,5 +1,8 @@
+
 class Fluent::MixpanelOutput < Fluent::BufferedOutput
   Fluent::Plugin.register_output('mixpanel', self)
+
+  include Fluent::HandleTagNameMixin
 
   config_param :project_token, :string
   config_param :api_key, :string, :default => ''
@@ -7,9 +10,9 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   config_param :distinct_id_key, :string
   config_param :event_key, :string, :default => nil
   config_param :ip_key, :string, :default => nil
-
-  config_param :remove_tag_prefix, :string, :default => nil
   config_param :event_map_tag, :bool, :default => false
+  #NOTE: This will be removed in a future release. Please specify the '.' on any prefix
+  config_param :use_legacy_prefix_behavior, :default => true
 
   class MixpanelError < StandardError
   end
@@ -25,10 +28,10 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
     @distinct_id_key = conf['distinct_id_key']
     @event_key = conf['event_key']
     @ip_key = conf['ip_key']
-    @remove_tag_prefix = conf['remove_tag_prefix']
     @event_map_tag = conf['event_map_tag']
     @api_key = conf['api_key']
     @use_import = conf['use_import']
+    @use_legacy_prefix_behavior = conf['use_legacy_prefix_behavior']
 
     if @event_key.nil? and !@event_map_tag
       raise Fluent::ConfigError, "'event_key' must be specifed when event_map_tag == false."
@@ -58,7 +61,8 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
       prop.delete('token')
 
       if @event_map_tag
-        data['event'] = tag.gsub(/^#{@remove_tag_prefix}(\.)?/, '')
+        tag.gsub!(/^\./, '') if @use_legacy_prefix_behavior
+        data['event'] = tag
       elsif record[@event_key]
         data['event'] = record[@event_key]
         prop.delete(@event_key)
