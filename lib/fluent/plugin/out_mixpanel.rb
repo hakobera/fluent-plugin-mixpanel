@@ -88,7 +88,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
       end
 
       prop.select! {|key, _| !key.start_with?('mp_') }
-      prop.merge!('time' => time.to_i)
+      prop['time'] = (data['time'] || time.to_i)
 
       records << data
     end
