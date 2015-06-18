@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = "fluent-plugin-mixpanel"
-  spec.version       = "0.0.6"
+  spec.version       = "0.0.7"
   spec.authors       = ["Kazuyuki Honda"]
   spec.email         = ["hakobera@gmail.com"]
   spec.summary       = %q{Fluentd plugin to input/output event track data to mixpanel}
