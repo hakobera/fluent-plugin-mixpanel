@@ -45,7 +45,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   end
 
   def format(tag, time, record)
-    time = record['time'] if record['time']
+    time = record['time'] if record['time'] && @use_import
     [tag, time, record].to_msgpack
   end
 

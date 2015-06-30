@@ -72,6 +72,21 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_equal "value2",  @out[0]['properties']['key2']
   end
 
+  def test_write_setting_time_via_export
+    stub_mixpanel_import
+    d = create_driver(CONFIG + "use_import true\nevent_key event")
+    time = Time.new('2014-01-01T01:23:45+00:00')
+    d.emit(sample_record.merge!('time' => 1435707767), time)
+    d.run
+
+    assert_equal "test_token", @out[0]['properties']['token']
+    assert_equal "123",     @out[0]['properties']['distinct_id']
+    assert_equal "event1",  @out[0]['event']
+    assert_equal 1435707767, @out[0]['properties']['time']
+    assert_equal "value1",  @out[0]['properties']['key1']
+    assert_equal "value2",  @out[0]['properties']['key2']
+  end
+
   def test_write_multi_request
     stub_mixpanel_import
     d = create_driver(IMPORT_CONFIG + "event_key event")
