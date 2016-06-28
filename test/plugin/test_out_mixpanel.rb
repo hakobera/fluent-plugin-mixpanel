@@ -286,6 +286,69 @@ class MixpanelOutputTest < Test::Unit::TestCase
     }
   end
 
-  def test_blah
+  def test_multiple_records_1_missing_event
+    stub_mixpanel
+    d = create_driver(CONFIG + "event_key event")
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
+    d.emit(sample_record, time)
+
+    broken_record = sample_record.dup.delete(:event)
+    d.emit(broken_record, time)
+
+    d.run
+
+    assert_equal 1, @out.length
+
+    assert_equal "test_token", @out[0]['properties']['token']
+    assert_equal "123",     @out[0]['properties']['distinct_id']
+    assert_equal "event1",  @out[0]['event']
+    assert_equal time, @out[0]['properties']['time']
+    assert_equal "value1",  @out[0]['properties']['key1']
+    assert_equal "value2",  @out[0]['properties']['key2']
+
+  end
+
+  def test_multiple_records_1_missing_distinct_id
+    stub_mixpanel
+    d = create_driver(CONFIG + "event_key event")
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
+    d.emit(sample_record, time)
+
+    broken_record = sample_record.dup.delete(:user_id)
+    d.emit(broken_record, time)
+
+    d.run
+
+    assert_equal 1, @out.length
+
+    assert_equal "test_token", @out[0]['properties']['token']
+    assert_equal "123",     @out[0]['properties']['distinct_id']
+    assert_equal "event1",  @out[0]['event']
+    assert_equal time, @out[0]['properties']['time']
+    assert_equal "value1",  @out[0]['properties']['key1']
+    assert_equal "value2",  @out[0]['properties']['key2']
+
+  end
+
+  def test_multiple_records_1_having_mp
+    stub_mixpanel
+    d = create_driver(CONFIG + "event_key event")
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
+    d.emit(sample_record, time)
+
+    broken_record = sample_record.dup.merge({ event: 'mp_foo'})
+    d.emit(broken_record, time)
+
+    d.run
+
+    assert_equal 1, @out.length
+
+    assert_equal "test_token", @out[0]['properties']['token']
+    assert_equal "123",     @out[0]['properties']['distinct_id']
+    assert_equal "event1",  @out[0]['event']
+    assert_equal time, @out[0]['properties']['time']
+    assert_equal "value1",  @out[0]['properties']['key1']
+    assert_equal "value2",  @out[0]['properties']['key2']
+
   end
 end
