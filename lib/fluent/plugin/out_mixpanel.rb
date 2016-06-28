@@ -68,7 +68,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
         data['event'] = record[@event_key]
         prop.delete(@event_key)
       else
-        log.warn("no event, record: #{record.to_json}")
+        log.warn("no event, tag: #{tag}, time: #{time.to_s}, record: #{record.to_json}")
         next
       end
 
@@ -79,7 +79,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
         data['distinct_id'] = record[@distinct_id_key]
         prop.delete(@distinct_id_key)
       else
-        log.warn("no distinct_id, record: #{record.to_json}")
+        log.warn("no distinct_id, tag: #{tag}, time: #{time.to_s}, record: #{record.to_json}")
         next
       end
 
