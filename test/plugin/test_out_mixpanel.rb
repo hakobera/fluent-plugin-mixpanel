@@ -1,5 +1,6 @@
 require 'helper'
 require 'uri'
+require 'msgpack'
 
 class MixpanelOutputTest < Test::Unit::TestCase
 
@@ -70,14 +71,14 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write
     stub_mixpanel
     d = create_driver(CONFIG + "event_key event")
-    time = Time.new('2014-01-01T01:23:45+00:00')
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
     d.emit(sample_record, time)
     d.run
 
     assert_equal "test_token", @out[0]['properties']['token']
     assert_equal "123",     @out[0]['properties']['distinct_id']
     assert_equal "event1",  @out[0]['event']
-    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal time, @out[0]['properties']['time']
     assert_equal "value1",  @out[0]['properties']['key1']
     assert_equal "value2",  @out[0]['properties']['key2']
   end
@@ -85,7 +86,7 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write_setting_time_via_export
     stub_mixpanel_import
     d = create_driver(CONFIG + "use_import true\nevent_key event")
-    time = Time.new('2014-01-01T01:23:45+00:00')
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
     d.emit(sample_record.merge!('time' => 1435707767), time)
     d.run
 
@@ -100,8 +101,8 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write_multi_request
     stub_mixpanel_import
     d = create_driver(IMPORT_CONFIG + "event_key event")
-    time1 = Time.new('2014-01-01T01:23:45+00:00')
-    time2 = Time.new('2014-01-02T01:23:45+00:00')
+    time1 = Time.new('2014-01-01T01:23:45+00:00').to_i
+    time2 = Time.new('2014-01-02T01:23:45+00:00').to_i
 
     d.emit(sample_record, time1)
     d.emit(sample_record.merge(key3: "value3"), time2)
@@ -109,13 +110,13 @@ class MixpanelOutputTest < Test::Unit::TestCase
 
     assert_equal "123",      @out[0]['properties']['distinct_id']
     assert_equal "event1",   @out[0]['event']
-    assert_equal time1.to_i, @out[0]['properties']['time']
+    assert_equal time1, @out[0]['properties']['time']
     assert_equal "value1",   @out[0]['properties']['key1']
     assert_equal "value2",   @out[0]['properties']['key2']
 
     assert_equal "123",      @out[1]['properties']['distinct_id']
     assert_equal "event1",   @out[1]['event']
-    assert_equal time2.to_i, @out[1]['properties']['time']
+    assert_equal time2, @out[1]['properties']['time']
     assert_equal "value1",   @out[1]['properties']['key1']
     assert_equal "value2",   @out[1]['properties']['key2']
     assert_equal "value2",   @out[1]['properties']['key2']
@@ -124,13 +125,13 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write_with_ip_key
     stub_mixpanel
     d = create_driver(CONFIG + "event_key event\n ip_key ip_address")
-    time = Time.new('2014-01-01T01:23:45+00:00')
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
     d.emit(sample_record.merge('ip_address' => '192.168.0.2'), time)
     d.run
 
     assert_equal "123",         @out[0]['properties']['distinct_id']
     assert_equal "event1",      @out[0]['event']
-    assert_equal time.to_i,     @out[0]['properties']['time']
+    assert_equal time,     @out[0]['properties']['time']
     assert_equal "192.168.0.2", @out[0]['properties']['ip']
     assert_equal "value1",      @out[0]['properties']['key1']
     assert_equal "value2",      @out[0]['properties']['key2']
@@ -139,13 +140,13 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write_with_no_tag_manipulation
     stub_mixpanel
     d = create_driver(CONFIG + "event_map_tag true")
-    time = Time.new('2014-01-01T01:23:45+00:00')
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
     d.emit(sample_record, time)
     d.run
 
     assert_equal "123",           @out[0]['properties']['distinct_id']
     assert_equal "mixpanel.test", @out[0]['event']
-    assert_equal time.to_i,       @out[0]['properties']['time']
+    assert_equal time,       @out[0]['properties']['time']
     assert_equal "value1",        @out[0]['properties']['key1']
     assert_equal "value2",        @out[0]['properties']['key2']
   end
@@ -153,13 +154,13 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write_with_event_map_tag_removing_prefix
     stub_mixpanel
     d = create_driver(CONFIG + "remove_tag_prefix mixpanel.\n event_map_tag true")
-    time = Time.new('2014-01-01T01:23:45+00:00')
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
     d.emit(sample_record, time)
     d.run
 
     assert_equal "123",     @out[0]['properties']['distinct_id']
     assert_equal "test",    @out[0]['event']
-    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal time, @out[0]['properties']['time']
     assert_equal "value1",  @out[0]['properties']['key1']
     assert_equal "value2",  @out[0]['properties']['key2']
   end
@@ -167,13 +168,13 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write_with_event_map_tag_removing_prefix_LEGACY
     stub_mixpanel
     d = create_driver(CONFIG + "remove_tag_prefix mixpanel\n event_map_tag true\n use_legacy_prefix_behavior true")
-    time = Time.new('2014-01-01T01:23:45+00:00')
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
     d.emit(sample_record, time)
     d.run
 
     assert_equal "123",     @out[0]['properties']['distinct_id']
     assert_equal "test",    @out[0]['event']
-    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal time, @out[0]['properties']['time']
     assert_equal "value1",  @out[0]['properties']['key1']
     assert_equal "value2",  @out[0]['properties']['key2']
   end
@@ -181,13 +182,13 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write_with_event_map_tag_removing_prefix_LEGACY_with_dot
     stub_mixpanel
     d = create_driver(CONFIG + "remove_tag_prefix mixpanel.\n event_map_tag true\n use_legacy_prefix_behavior true")
-    time = Time.new('2014-01-01T01:23:45+00:00')
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
     d.emit(sample_record, time)
     d.run
 
     assert_equal "123",     @out[0]['properties']['distinct_id']
     assert_equal "test",    @out[0]['event']
-    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal time, @out[0]['properties']['time']
     assert_equal "value1",  @out[0]['properties']['key1']
     assert_equal "value2",  @out[0]['properties']['key2']
   end
@@ -195,13 +196,13 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write_with_event_map_tag_removing_suffix
     stub_mixpanel
     d = create_driver(CONFIG + "remove_tag_suffix .test\n event_map_tag true")
-    time = Time.new('2014-01-01T01:23:45+00:00')
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
     d.emit(sample_record, time)
     d.run
 
     assert_equal "123",     @out[0]['properties']['distinct_id']
     assert_equal "mixpanel",    @out[0]['event']
-    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal time, @out[0]['properties']['time']
     assert_equal "value1",  @out[0]['properties']['key1']
     assert_equal "value2",  @out[0]['properties']['key2']
   end
@@ -209,13 +210,13 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write_with_event_map_tag_adding_prefix
     stub_mixpanel
     d = create_driver(CONFIG + "add_tag_prefix foo.\n event_map_tag true")
-    time = Time.new('2014-01-01T01:23:45+00:00')
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
     d.emit(sample_record, time)
     d.run
 
     assert_equal "123",     @out[0]['properties']['distinct_id']
     assert_equal "foo.mixpanel.test",    @out[0]['event']
-    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal time, @out[0]['properties']['time']
     assert_equal "value1",  @out[0]['properties']['key1']
     assert_equal "value2",  @out[0]['properties']['key2']
   end
@@ -223,13 +224,13 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write_with_event_map_tag_adding_suffix
     stub_mixpanel
     d = create_driver(CONFIG + "add_tag_suffix .foo\n event_map_tag true")
-    time = Time.new('2014-01-01T01:23:45+00:00')
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
     d.emit(sample_record, time)
     d.run
 
     assert_equal "123",     @out[0]['properties']['distinct_id']
     assert_equal "mixpanel.test.foo",    @out[0]['event']
-    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal time, @out[0]['properties']['time']
     assert_equal "value1",  @out[0]['properties']['key1']
     assert_equal "value2",  @out[0]['properties']['key2']
   end
@@ -237,7 +238,7 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write_ignore_special_event
     stub_mixpanel
     d = create_driver(CONFIG + "event_key event")
-    time = Time.new('2014-01-01T01:23:45+00:00')
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
     d.emit({ user_id: '123', event: 'mp_page_view' }, time)
     d.run
 
@@ -247,14 +248,14 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write_ignore_special_property
     stub_mixpanel
     d = create_driver(CONFIG + "event_key event")
-    time = Time.new('2014-01-01T01:23:45+00:00')
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
     d.emit(sample_record.merge('mp_event' => '3'), time)
     d.run
 
     assert_equal "test_token", @out[0]['properties']['token']
     assert_equal "123",     @out[0]['properties']['distinct_id']
     assert_equal "event1",  @out[0]['event']
-    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal time, @out[0]['properties']['time']
     assert_equal "value1",  @out[0]['properties']['key1']
     assert_equal "value2",  @out[0]['properties']['key2']
     assert_equal false, @out[0]['properties'].key?('mp_event')
@@ -263,14 +264,14 @@ class MixpanelOutputTest < Test::Unit::TestCase
   def test_write_delete_supried_token
     stub_mixpanel
     d = create_driver(CONFIG + "event_key event")
-    time = Time.new('2014-01-01T01:23:45+00:00')
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
     d.emit(sample_record.merge('token' => '123'), time)
     d.run
 
     assert_equal "test_token", @out[0]['properties']['token']
     assert_equal "123",     @out[0]['properties']['distinct_id']
     assert_equal "event1",  @out[0]['event']
-    assert_equal time.to_i, @out[0]['properties']['time']
+    assert_equal time, @out[0]['properties']['time']
     assert_equal "value1",  @out[0]['properties']['key1']
     assert_equal "value2",  @out[0]['properties']['key2']
     assert_equal false, @out[0]['properties'].key?('mp_event')
@@ -283,5 +284,8 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_raise(Fluent::MixpanelOutput::MixpanelError) {
       d.run
     }
+  end
+
+  def test_blah
   end
 end
