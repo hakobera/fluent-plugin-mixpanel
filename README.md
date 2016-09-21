@@ -62,6 +62,18 @@ tracker.track("123", "event1", { key1: "value1", key2: "value2" })
 
 You can use tag name as event name like this. (see additional tag manipulations options below)
 
+#### Discarding mixpanel errors
+
+When delivering events to Mixpanel, Fluent creates a chunk of messages to send. By default, if one event fails to send to Mixpanel, all messages in that chunk are requeued for delivery. Enabling `discard_event_on_send_error` allows you to ignore single delivery failures. The event is logged via `info`, including the record being dropped.
+
+```
+<match output.mixpanel.*>
+  ...
+  discard_event_on_send_error true
+  ...
+</match>
+```
+
 ##PLEASE NOTE (breaking api change in a future release)
 
 The api for remove_tag_prefix will be changing in a future release. There is currently a boolean option,

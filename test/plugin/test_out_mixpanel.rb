@@ -351,4 +351,21 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_equal "value2",  @out[0]['properties']['key2']
 
   end
+
+  def test_request_error_discard
+    stub_mixpanel_unavailable
+    d = create_driver(CONFIG + "event_key event\ndiscard_event_on_send_error true")
+    time = Time.new('2014-01-01T01:23:45+00:00').to_i
+    d.emit(sample_record, time)
+    d.run
+
+    logs = d.instance.log.logs
+
+    assert_match "MixpanelOutputErrorHandler:", logs[0]
+    assert_match "Class: Mixpanel::ServerError", logs[0]
+    assert_match "Message: Could not write to Mixpanel, server responded with 503 returning: 'Service Unavailable", logs[0]
+    assert_match "Backtrace", logs[0]
+    assert_match "Failed to track event to mixpanel", logs[1]
+    assert_match 'Record: {"properties":{"key1":"value1","key2":"value2","time":1388552400},"event":"event1","distinct_id":"123"}', logs[1]
+  end
 end
