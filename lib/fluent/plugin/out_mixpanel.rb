@@ -68,19 +68,19 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
         data['event'] = record[@event_key]
         prop.delete(@event_key)
       else
-        log.warn('no event')
-        return
+        log.warn("no event, tag: #{tag}, time: #{time.to_s}, record: #{record.to_json}")
+        next
       end
 
       # Ignore browswer only special event
-      return if data['event'].start_with?('mp_')
+      next if data['event'].start_with?('mp_')
 
       if record[@distinct_id_key]
         data['distinct_id'] = record[@distinct_id_key]
         prop.delete(@distinct_id_key)
       else
-        log.warn('no distinct_id')
-        return
+        log.warn("no distinct_id, tag: #{tag}, time: #{time.to_s}, record: #{record.to_json}")
+        next
       end
 
       if !@ip_key.nil? and record[@ip_key]
@@ -98,6 +98,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   end
 
   def send_to_mixpanel(records)
+    log.info("sending #{records.length} to mixpanel")
     records.each do |record|
      success = 	if @use_import
         					@tracker.import(@api_key, record['distinct_id'], record['event'], record['properties'])

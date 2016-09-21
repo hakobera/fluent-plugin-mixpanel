@@ -1,9 +1,23 @@
 require 'helper'
 require 'net/http'
 require 'base64'
+require 'fluent/test'
+require 'net/http'
 
 class HttpMixpanelInputTest < Test::Unit::TestCase
-  
+
+  class << self
+    def startup
+      socket_manager_path = ServerEngine::SocketManager::Server.generate_path
+      @server = ServerEngine::SocketManager::Server.open(socket_manager_path)
+      ENV['SERVERENGINE_SOCKETMANAGER_PATH'] = socket_manager_path.to_s
+    end
+
+    def shutdown
+      @server.close
+    end
+  end
+
   def setup
     Fluent::Test.setup
   end
@@ -11,13 +25,14 @@ class HttpMixpanelInputTest < Test::Unit::TestCase
   PORT = unused_port
   CONFIG = %[
     port #{PORT}
-    bind 127.0.0.1
+    bind "127.0.0.1"
     body_size_limit 10m
     keepalive_timeout 5
+    respond_with_empty_img true
   ]
 
   def create_driver(conf=CONFIG)
-    Fluent::Test::InputTestDriver.new(Fluent::HttpMixpanelInput).configure(conf)
+    Fluent::Test::InputTestDriver.new(Fluent::HttpMixpanelInput).configure(conf, true)
   end
 
   def test_configure
@@ -26,7 +41,7 @@ class HttpMixpanelInputTest < Test::Unit::TestCase
     assert_equal '127.0.0.1', d.instance.bind
     assert_equal 10*1024*1024, d.instance.body_size_limit
     assert_equal 5, d.instance.keepalive_timeout
-    assert_equal false, d.instance.add_http_headers    
+    assert_equal false, d.instance.add_http_headers
   end
 
   def test_time
@@ -39,16 +54,16 @@ class HttpMixpanelInputTest < Test::Unit::TestCase
     d.expect_emit "mixpanel.tag2", time, {"a"=>2}
 
     d.run do
-      d.expected_emits.each {|tag,time,record|
+      d.expected_emits.each {|tag, record_time, record|
         res = track("#{tag}", {"json"=>record})
         assert_equal "200", res.code
         assert_equal '1', res.body
-        assert_equal 'true', res.header['access-control-allow-credentials']
-        assert_equal 'X-Requested-With', res.header['access-control-allow-headers']
-        assert_equal 'GET, POST, OPTIONS', res.header['access-control-allow-methods']
-        assert_equal 'http://foo.example', res.header['access-control-allow-origin']
-        assert_equal '1728000', res.header['access-control-max-age']
-        assert_equal 'no-cache, no-store', res.header['cache-control']
+        assert_equal 'true', res['access-control-allow-credentials']
+        assert_equal 'X-Requested-With', res['access-control-allow-headers']
+        assert_equal 'GET, POST, OPTIONS', res['access-control-allow-methods']
+        assert_equal 'http://foo.example', res['access-control-allow-origin']
+        assert_equal '1728000', res['access-control-max-age']
+        assert_equal 'no-cache, no-store', res['cache-control']
       }
     end
   end
@@ -62,8 +77,8 @@ class HttpMixpanelInputTest < Test::Unit::TestCase
     d.expect_emit "mixpanel.tag2", time, {"a"=>2}
 
     d.run do
-      d.expected_emits.each {|tag,time,record|
-        res = track("#{tag}", {"json"=>record, "time"=>time.to_s})
+      d.expected_emits.each {|tag, record_time, record|
+        res = track("#{tag}", {"json"=>record, "time"=>record_time.to_s})
         assert_equal "200", res.code
       }
     end
@@ -81,8 +96,8 @@ class HttpMixpanelInputTest < Test::Unit::TestCase
     records = [["mixpanel.tag1", time, {"a"=>1}], ["mixpanel.tag2", time, {"a"=>2}]]
 
     d.run do
-      records.each {|tag,time,record|
-        res = track("#{tag}", {"json"=>record, "time"=>time.to_s})
+      records.each {|tag, record_time, record|
+        res = track("#{tag}", {"json"=>record, "time"=>record_time.to_s})
         assert_equal "200", res.code
       }
     end
@@ -99,7 +114,7 @@ class HttpMixpanelInputTest < Test::Unit::TestCase
       event: event,
       properties: params['json']
     }
-    data = URI.escape(Base64.encode64(data.to_json))
+    data = CGI.escape(Base64.encode64(data.to_json))
     query = "data=#{data}"
     path = "/track/?#{query}"
 
