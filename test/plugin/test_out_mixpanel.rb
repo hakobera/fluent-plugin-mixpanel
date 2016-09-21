@@ -366,6 +366,6 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_match "Message: Could not write to Mixpanel, server responded with 503 returning: 'Service Unavailable", logs[0]
     assert_match "Backtrace", logs[0]
     assert_match "Failed to track event to mixpanel", logs[1]
-    assert_match 'Record: {"properties":{"key1":"value1","key2":"value2","time":1388552400},"event":"event1","distinct_id":"123"}', logs[1]
+    assert_match 'Record: {"properties":{"key1":"value1","key2":"value2","time":' + time.to_s + '},"event":"event1","distinct_id":"123"}', logs[1]
   end
 end
