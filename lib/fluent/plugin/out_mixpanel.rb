@@ -5,8 +5,8 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
 
   include Fluent::HandleTagNameMixin
 
-  config_param :project_token, :string
-  config_param :api_key, :string, :default => ''
+  config_param :project_token, :string, :secret => true
+  config_param :api_key, :string, :default => '', :secret => true
   config_param :use_import, :bool, :default => nil
   config_param :distinct_id_key, :string
   config_param :event_key, :string, :default => nil
