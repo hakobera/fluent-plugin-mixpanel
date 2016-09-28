@@ -1,3 +1,4 @@
+require_relative "mixpanel_ruby_error_handler.rb"
 
 class Fluent::MixpanelOutput < Fluent::BufferedOutput
   Fluent::Plugin.register_output('mixpanel', self)
@@ -13,6 +14,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   config_param :event_map_tag, :bool, :default => false
   #NOTE: This will be removed in a future release. Please specify the '.' on any prefix
   config_param :use_legacy_prefix_behavior, :default => true
+  config_param :discard_event_on_send_error, :default => false
 
   class MixpanelError < StandardError
   end
@@ -32,6 +34,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
     @api_key = conf['api_key']
     @use_import = conf['use_import']
     @use_legacy_prefix_behavior = conf['use_legacy_prefix_behavior']
+    @discard_event_on_send_error = conf['discard_event_on_send_error']
 
     if @event_key.nil? and !@event_map_tag
       raise Fluent::ConfigError, "'event_key' must be specifed when event_map_tag == false."
@@ -40,7 +43,8 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
 
   def start
     super
-    @tracker = Mixpanel::Tracker.new(@project_token)
+    error_handler = Fluent::MixpanelOutputErrorHandler.new(log)
+    @tracker = Mixpanel::Tracker.new(@project_token, error_handler)
   end
 
   def shutdown
@@ -98,14 +102,26 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   end
 
   def send_to_mixpanel(records)
-    log.info("sending #{records.length} to mixpanel")
+    log.debug("sending #{records.length} to mixpanel")
+
     records.each do |record|
-     success = 	if @use_import
-        					@tracker.import(@api_key, record['distinct_id'], record['event'], record['properties'])
-      					else
-        					@tracker.track(record['distinct_id'], record['event'], record['properties'])
-      					end
-      raise MixpanelError.new("Failed to track event to mixpanel") unless success
+      success = true
+
+      if @use_import
+        success = @tracker.import(@api_key, record['distinct_id'], record['event'], record['properties'])
+      else
+        success = @tracker.track(record['distinct_id'], record['event'], record['properties'])
+      end
+
+      unless success
+        if @discard_event_on_send_error
+          msg = "Failed to track event to mixpanel:\n"
+          msg += "\tRecord: #{record.to_json}"
+          log.info(msg)
+        else
+          raise MixpanelError.new("Failed to track event to mixpanel")
+        end
+      end
     end
   end
 end

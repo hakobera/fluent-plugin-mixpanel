@@ -31,6 +31,7 @@ def unused_port
   port
 end
 
+require 'fluent/plugin/mixpanel_ruby_error_handler'
 require 'fluent/plugin/out_mixpanel'
 require 'fluent/plugin/in_http_mixpanel'
 
