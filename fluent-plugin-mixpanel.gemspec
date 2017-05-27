@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = "fluent-plugin-mixpanel"
-  spec.version       = "0.0.9"
+  spec.version       = "0.1.0"
   spec.authors       = ["Kazuyuki Honda"]
   spec.email         = ["hakobera@gmail.com"]
   spec.summary       = %q{Fluentd plugin to input/output event track data to mixpanel}
@@ -17,10 +17,13 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_runtime_dependency "fluentd", ">= 0.10.55"
-  spec.add_runtime_dependency "mixpanel-ruby", "~> 2.2.0"
+  spec.required_ruby_version = '>= 2.0.0'
+
+  spec.add_dependency "fluentd", [">= 0.10.58", "< 0.14.0"]
+  spec.add_dependency "mixpanel-ruby", "~> 2.2.0"
 
   spec.add_development_dependency "rake"
+  spec.add_development_dependency "serverengine", [">= 2.0.4", "< 3.0.0"]
   spec.add_development_dependency "webmock"
   spec.add_development_dependency "test-unit", "~> 3.0.2"
 end

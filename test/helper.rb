@@ -23,17 +23,3 @@ unless ENV.has_key?('VERBOSE')
   }
   $log = nulllogger
 end
-
-def unused_port
-  s = TCPServer.open(0)
-  port = s.addr[1]
-  s.close
-  port
-end
-
-require 'fluent/plugin/mixpanel_ruby_error_handler'
-require 'fluent/plugin/out_mixpanel'
-require 'fluent/plugin/in_http_mixpanel'
-
-class Test::Unit::TestCase
-end
