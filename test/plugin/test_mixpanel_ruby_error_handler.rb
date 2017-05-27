@@ -1,4 +1,6 @@
 require 'helper'
+require 'logger'
+require 'fluent/plugin/mixpanel_ruby_error_handler'
 
 class MixpanelRubyErrorHandlerTest < Test::Unit::TestCase
 

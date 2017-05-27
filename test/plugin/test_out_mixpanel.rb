@@ -1,6 +1,7 @@
 require 'helper'
 require 'uri'
 require 'msgpack'
+require 'fluent/plugin/out_mixpanel'
 
 class MixpanelOutputTest < Test::Unit::TestCase
 
@@ -12,6 +13,7 @@ class MixpanelOutputTest < Test::Unit::TestCase
   CONFIG = %[
     project_token test_token
     distinct_id_key user_id
+    log_level info
   ]
 
   IMPORT_CONFIG = CONFIG + %[ api_key test_api_key

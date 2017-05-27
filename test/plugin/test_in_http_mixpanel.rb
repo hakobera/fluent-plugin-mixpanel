@@ -3,6 +3,8 @@ require 'net/http'
 require 'base64'
 require 'fluent/test'
 require 'net/http'
+require 'serverengine'
+require 'fluent/plugin/in_http_mixpanel'
 
 class HttpMixpanelInputTest < Test::Unit::TestCase
 
@@ -15,6 +17,13 @@ class HttpMixpanelInputTest < Test::Unit::TestCase
 
     def shutdown
       @server.close
+    end
+
+    def unused_port
+      s = TCPServer.open(0)
+      port = s.addr[1]
+      s.close
+      port
     end
   end
 
