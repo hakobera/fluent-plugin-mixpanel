@@ -19,8 +19,8 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 2.0.0'
 
-  spec.add_runtime_dependency "fluentd", "~> 0.12.26"
-  spec.add_runtime_dependency "mixpanel-ruby", "~> 2.2.0"
+  spec.add_dependency "fluentd", [">= 0.10.58", "< 0.14.0"]
+  spec.add_dependency "mixpanel-ruby", "~> 2.2.0"
 
   spec.add_development_dependency "rake"
   spec.add_development_dependency "serverengine", [">= 2.0.4", "< 3.0.0"]
