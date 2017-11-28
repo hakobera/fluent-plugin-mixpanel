@@ -1,10 +1,14 @@
 require 'helper'
 require 'net/http'
+require 'cgi'
 require 'base64'
 require 'fluent/test'
+require 'fluent/test/helpers'
 require 'net/http'
 require 'serverengine'
 require 'fluent/plugin/in_http_mixpanel'
+
+include Fluent::Test::Helpers
 
 class HttpMixpanelInputTest < Test::Unit::TestCase
 
@@ -118,10 +122,13 @@ class HttpMixpanelInputTest < Test::Unit::TestCase
 
   def track(tag, params)
     event = tag.sub(/^mixpanel\.(.+)$/, '\1')
-    params['json']['time'] = params['time'] if params['time']
+    # DO NOT modify the original json; doing so changes what is expected to be emitted
+    # and causes the tests to fail
+    json = params['json'].dup
+    json['time'] = params['time'] if params['time']
     data = {
       event: event,
-      properties: params['json']
+      properties: json
     }
     data = CGI.escape(Base64.encode64(data.to_json))
     query = "data=#{data}"

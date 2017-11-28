@@ -1,7 +1,10 @@
 require_relative "mixpanel_ruby_error_handler.rb"
+require "fluent/plugin/output"
 
-class Fluent::MixpanelOutput < Fluent::BufferedOutput
+class Fluent::MixpanelOutput < Fluent::Plugin::Output
   Fluent::Plugin.register_output('mixpanel', self)
+
+  helpers :compat_parameters
 
   include Fluent::HandleTagNameMixin
 
@@ -25,6 +28,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   end
 
   def configure(conf)
+    compat_parameters_convert(conf, :buffer, :inject, :extract, :parser, :formatter, default_chunk_key: "")
     super
     @project_tokey = conf['project_token']
     @distinct_id_key = conf['distinct_id_key']
@@ -56,6 +60,10 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
     [tag, time, record].to_msgpack
   end
 
+  def formatted_to_msgpack_binary?
+    true
+  end
+
   def write(chunk)
     records = []
     chunk.msgpack_each do |tag, time, record|
@@ -64,6 +72,9 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
 
       # Ignore token in record
       prop.delete('token')
+
+      # New in 0.14: we have to call this, it doesn't happen by magic anymore
+      filter_record(tag, time, record)
 
       if @event_map_tag
         tag.gsub!(/^\./, '') if @use_legacy_prefix_behavior
