@@ -1,5 +1,5 @@
-require 'rubygems'
-require 'bundler'
+require "bundler/setup"
+require "test/unit"
 begin
   Bundler.setup(:default, :development)
 rescue Bundler::BundlerError => e
@@ -11,15 +11,7 @@ require 'test/unit'
 require 'webmock/test_unit'
 WebMock.disable_net_connect!(:allow_localhost => true)
 
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-$LOAD_PATH.unshift(File.dirname(__FILE__))
+$LOAD_PATH.unshift(File.join(__dir__, "..", "lib"))
+$LOAD_PATH.unshift(__dir__)
+
 require 'fluent/test'
-unless ENV.has_key?('VERBOSE')
-  nulllogger = Object.new
-  nulllogger.instance_eval {|obj|
-    def method_missing(method, *args)
-      # pass
-    end
-  }
-  $log = nulllogger
-end

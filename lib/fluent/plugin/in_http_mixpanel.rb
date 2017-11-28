@@ -1,10 +1,15 @@
 require 'fluent/plugin/in_http'
 require 'base64'
 
-class Fluent::HttpMixpanelInput < Fluent::HttpInput
+class Fluent::HttpMixpanelInput < Fluent::Plugin::HttpInput
   Fluent::Plugin.register_input('http_mixpanel', self)
 
   config_param :tag_prefix, :default => 'mixpanel'
+
+  def configure(conf)
+    compat_parameters_convert(conf, :inject, :extract, :parser, :formatter, default_chunk_key: "")
+    super
+  end
 
   def on_request(path_info, params)
     data = Base64.decode64(params['data']).force_encoding('utf-8')
