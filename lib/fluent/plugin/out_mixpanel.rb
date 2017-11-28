@@ -15,6 +15,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   #NOTE: This will be removed in a future release. Please specify the '.' on any prefix
   config_param :use_legacy_prefix_behavior, :default => true
   config_param :discard_event_on_send_error, :default => false
+  config_param :batch_to_mixpanel, :default => false
 
   class MixpanelError < StandardError
   end
@@ -35,6 +36,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
     @use_import = conf['use_import']
     @use_legacy_prefix_behavior = conf['use_legacy_prefix_behavior']
     @discard_event_on_send_error = conf['discard_event_on_send_error']
+    @batch_to_mixpanel = conf['batch_to_mixpanel']
 
     if @event_key.nil? and !@event_map_tag
       raise Fluent::ConfigError, "'event_key' must be specifed when event_map_tag == false."
@@ -44,7 +46,14 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   def start
     super
     error_handler = Fluent::MixpanelOutputErrorHandler.new(log)
-    @tracker = Mixpanel::Tracker.new(@project_token, error_handler)
+    if(@batch_to_mixpanel)
+      @batched_consumer = Mixpanel::BufferedConsumer.new
+      @tracker = Mixpanel::Tracker.new(@project_token, error_handler) do | type, message |
+          @batched_consumer.send!(type, message)
+      end
+    else
+      @tracker = Mixpanel::Tracker.new(@project_token, error_handler)
+    end
   end
 
   def shutdown
@@ -122,6 +131,9 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
           raise MixpanelError.new("Failed to track event to mixpanel")
         end
       end
+    end
+    if(@batch_to_mixpanel)
+      @batched_consumer.flush
     end
   end
 end

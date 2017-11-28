@@ -146,6 +146,10 @@ add_tag_prefix <tag_prefix_to_add_including_the_dot>
 add_tag_suffix <tag_suffix_to_add_including_the_dot>
 ```
 
+#### Batch calls to mixpanel
+
+With 'batch\_to\_mixpanel' set to 'true' (default is false, for consistency with previous versions), events are sent in batches to MixPanel, rather than one per HTTP request.  This can increase throughput by an order of magnitude or more (depending on latency and other overhead)
+
 ### HttpMixpanelInput
 
 HttpMixpanelInput has same configuration as [http Input Plugin](http://docs.fluentd.org/en/articles/in_http).

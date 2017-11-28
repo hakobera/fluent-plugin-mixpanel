@@ -370,4 +370,35 @@ class MixpanelOutputTest < Test::Unit::TestCase
     assert_match "Failed to track event to mixpanel", logs[1]
     assert_match 'Record: {"properties":{"key1":"value1","key2":"value2","time":' + time.to_s + '},"event":"event1","distinct_id":"123"}', logs[1]
   end
+
+
+  def test_mixpanel_batch
+    stub_mixpanel
+    d = create_driver(CONFIG + "event_key event\nbatch_to_mixpanel true\n")
+    time1 = Time.new('2014-01-01T01:23:45+00:00').to_i
+    time2 = Time.new('2014-01-02T01:23:45+00:00').to_i
+
+    d.emit(sample_record, time1)
+    d.emit(sample_record.merge(key3: "value3"), time2)
+    d.run
+
+    #Because of the batching, @out is an array with a single element, that being an array of two events
+    #  compared to non-batched tests, where @out is just an array of the events
+    # Therefore this structure is a good indication that the batching is actually working
+    assert_equal 1, @out.length
+    batch = @out[0]
+    assert_equal 2, batch.length
+    assert_equal "123",      batch[0]['properties']['distinct_id']
+    assert_equal "event1",   batch[0]['event']
+    assert_equal time1, batch[0]['properties']['time']
+    assert_equal "value1",   batch[0]['properties']['key1']
+    assert_equal "value2",   batch[0]['properties']['key2']
+
+    assert_equal "123",      batch[1]['properties']['distinct_id']
+    assert_equal "event1",   batch[1]['event']
+    assert_equal time2, batch[1]['properties']['time']
+    assert_equal "value1",   batch[1]['properties']['key1']
+    assert_equal "value2",   batch[1]['properties']['key2']
+    assert_equal "value2",   batch[1]['properties']['key2']
+  end
 end
