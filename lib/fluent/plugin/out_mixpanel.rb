@@ -10,11 +10,13 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   config_param :use_import, :bool, :default => nil
   config_param :distinct_id_key, :string
   config_param :event_key, :string, :default => nil
+  config_param :event_type_key, :string, :default => nil
   config_param :ip_key, :string, :default => nil
   config_param :event_map_tag, :bool, :default => false
   #NOTE: This will be removed in a future release. Please specify the '.' on any prefix
   config_param :use_legacy_prefix_behavior, :default => true
   config_param :discard_event_on_send_error, :default => false
+  config_param :batch_to_mixpanel, :default => false
 
   class MixpanelError < StandardError
   end
@@ -29,12 +31,14 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
     @project_tokey = conf['project_token']
     @distinct_id_key = conf['distinct_id_key']
     @event_key = conf['event_key']
+    @event_type_key = conf['event_type_key']
     @ip_key = conf['ip_key']
     @event_map_tag = conf['event_map_tag']
     @api_key = conf['api_key']
     @use_import = conf['use_import']
     @use_legacy_prefix_behavior = conf['use_legacy_prefix_behavior']
     @discard_event_on_send_error = conf['discard_event_on_send_error']
+    @batch_to_mixpanel = conf['batch_to_mixpanel']
 
     if @event_key.nil? and !@event_map_tag
       raise Fluent::ConfigError, "'event_key' must be specifed when event_map_tag == false."
@@ -44,7 +48,14 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   def start
     super
     error_handler = Fluent::MixpanelOutputErrorHandler.new(log)
-    @tracker = Mixpanel::Tracker.new(@project_token, error_handler)
+    if @batch_to_mixpanel
+      @batched_consumer = Mixpanel::BufferedConsumer.new
+      @tracker = Mixpanel::Tracker.new(@project_token, error_handler) do |type, message|
+          @batched_consumer.send!(type, message)
+      end
+    else
+      @tracker = Mixpanel::Tracker.new(@project_token, error_handler)
+    end
   end
 
   def shutdown
@@ -87,13 +98,18 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
         next
       end
 
+      if @event_type_key && record[@event_type_key]
+        data['event_type'] = record[@event_type_key]
+        prop.delete(@event_type_key)
+      end
+
       if !@ip_key.nil? and record[@ip_key]
         prop['ip'] = record[@ip_key]
         prop.delete(@ip_key)
       end
 
       prop.select! {|key, _| !key.start_with?('mp_') }
-      prop.merge!('time' => time.to_i)
+      prop.merge!('time' => record['time'] || time.to_i)
 
       records << data
     end
@@ -110,7 +126,24 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
       if @use_import
         success = @tracker.import(@api_key, record['distinct_id'], record['event'], record['properties'])
       else
-        success = @tracker.track(record['distinct_id'], record['event'], record['properties'])
+        event_type = record[@event_type_key]
+        success =
+          case event_type
+          when 'profile_update'
+            @tracker.people.set(record['distinct_id'], record['properties'], record['ip'])
+          when 'profile_inc'
+            properties = record['properties'].dup
+            properties.delete('ip')
+            properties.delete('time')
+            @tracker.people.increment(
+              record['distinct_id'],
+              properties,
+              record['ip'],
+              '$ignore_time' => 'true'
+            )
+          else # assuming default type 'event'
+            @tracker.track(record['distinct_id'], record['event'], record['properties'])
+          end
       end
 
       unless success
@@ -122,6 +155,9 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
           raise MixpanelError.new("Failed to track event to mixpanel")
         end
       end
+    end
+    if(@batch_to_mixpanel)
+      @batched_consumer.flush
     end
   end
 end
