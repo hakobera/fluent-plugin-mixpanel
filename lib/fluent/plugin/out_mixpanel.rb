@@ -10,7 +10,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
   config_param :use_import, :bool, :default => nil
   config_param :distinct_id_key, :string
   config_param :event_key, :string, :default => nil
-  config_param :eventy_type_key, :string, :default => nil
+  config_param :event_type_key, :string, :default => nil
   config_param :ip_key, :string, :default => nil
   config_param :event_map_tag, :bool, :default => false
   #NOTE: This will be removed in a future release. Please specify the '.' on any prefix
