@@ -150,6 +150,9 @@ add_tag_suffix <tag_suffix_to_add_including_the_dot>
 
 With 'batch\_to\_mixpanel' set to 'true' (default is false, for consistency with previous versions), events are sent in batches to MixPanel, rather than one per HTTP request.  This can increase throughput by an order of magnitude or more (depending on latency and other overhead)
 
+Batch Processing can handle profile updates via `people.set` and `people.increment`. To identify those event types, you need to pass `event_type` with values `profile_update` or `profile_inc`. The `event_type` key can be changed via the config value `event_type_key`.
+
+
 ### HttpMixpanelInput
 
 HttpMixpanelInput has same configuration as [http Input Plugin](http://docs.fluentd.org/en/articles/in_http).
