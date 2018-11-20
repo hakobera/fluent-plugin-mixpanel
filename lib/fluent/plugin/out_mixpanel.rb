@@ -130,7 +130,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
         success =
           case event_type
           when 'profile_update'
-            @tracker.people.set(record['distinct_id'], record['properties'], record['ip'])
+            @tracker.people.set(record['distinct_id'], record['properties'], record['properties']['ip'])
           when 'profile_inc'
             properties = record['properties'].dup
             properties.delete('ip')
@@ -138,7 +138,7 @@ class Fluent::MixpanelOutput < Fluent::BufferedOutput
             @tracker.people.increment(
               record['distinct_id'],
               properties,
-              record['ip'],
+              record['properties']['ip'],
               '$ignore_time' => 'true'
             )
           else # assuming default type 'event'
